@@ -1,3 +1,5 @@
+
+-- Sample database name. Changed accordingly
 USE DBMS_DA2_CONCEPT;
 
 -- Disable foreign key checks for clean initialization
@@ -188,7 +190,7 @@ CREATE TABLE CASE_TAG_MAPPING (
 
 
 
-
+-- Trigger statements keeping with constraints and nuances of the model
 
 
 DELIMITER //
@@ -217,7 +219,7 @@ DELIMITER ;
 
 
 
-
+-- Data insertion into all tables. Small scale
 
 
 -- 1. Insert Courts
@@ -322,4 +324,3 @@ INSERT INTO CASE_CITATION VALUES
 
 
 
-select * from judge;
