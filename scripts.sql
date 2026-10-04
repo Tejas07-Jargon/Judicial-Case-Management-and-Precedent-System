@@ -1,5 +1,6 @@
 
--- Sample database name. Changed accordingly
+CREATE DATABASE DBMS_DA2_CONCEPT;
+
 USE DBMS_DA2_CONCEPT;
 
 -- Disable foreign key checks for clean initialization
@@ -190,7 +191,7 @@ CREATE TABLE CASE_TAG_MAPPING (
 
 
 
--- Trigger statements keeping with constraints and nuances of the model
+
 
 
 DELIMITER //
@@ -213,13 +214,96 @@ BEGIN
     END IF;
 END //
 
+
+-- [TRIGGER]: Automatically close a case when a Judgment is rendered (Member 2 Logic)
+CREATE TRIGGER auto_close_case_on_judgment
+AFTER INSERT ON JUDGMENT
+FOR EACH ROW
+BEGIN
+    UPDATE `CASE` 
+    SET Status = 'Closed' 
+    WHERE Case_ID = NEW.Case_ID;
+END //
+
+-- [TRIGGER]: Prevent scheduling new hearings for closed cases (Member 2 Logic)
+CREATE TRIGGER prevent_hearing_on_closed_case
+BEFORE INSERT ON HEARING
+FOR EACH ROW
+BEGIN
+    DECLARE v_status VARCHAR(50);
+    SELECT Status INTO v_status FROM `CASE` WHERE Case_ID = NEW.Case_ID;
+    
+    IF v_status = 'Closed' THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Lifecycle Violation: Cannot schedule a hearing for a closed case.';
+    END IF;
+END //
+
+-- [FUNCTION]: Get total active caseload for a specific Court (Member 1 Logic)
+CREATE FUNCTION Get_Court_Case_Count(p_Court_ID VARCHAR(50)) 
+RETURNS INT
+DETERMINISTIC READS SQL DATA
+BEGIN
+    DECLARE total_cases INT DEFAULT 0;
+    SELECT COUNT(*) INTO total_cases FROM `CASE` WHERE Court_ID = p_Court_ID;
+    RETURN total_cases;
+END //
+
+-- [PROCEDURE]: ACID-compliant Case Registration spanning Superclass & Subclass
+CREATE PROCEDURE Register_Criminal_Case(
+    IN p_Case_ID VARCHAR(50), IN p_Court_ID VARCHAR(50), IN p_Parent_Case_ID VARCHAR(50),
+    IN p_Title VARCHAR(200), IN p_Filing_Date DATE, IN p_FIR_No VARCHAR(50),
+    IN p_Bail DECIMAL(15,2), IN p_Agency VARCHAR(100)
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Transaction failed. Registration rolled back.';
+    END;
+
+    START TRANSACTION;
+    INSERT INTO `CASE` (Case_ID, Court_ID, Parent_Case_ID, Title, Filing_Date, Status)
+    VALUES (p_Case_ID, p_Court_ID, p_Parent_Case_ID, p_Title, p_Filing_Date, 'Pending');
+    
+    INSERT INTO CRIMINAL_CASE (Case_ID, FIR_Or_Complaint_No, Bail_Amount, Arresting_Agency)
+    VALUES (p_Case_ID, p_FIR_No, p_Bail, p_Agency);
+    COMMIT;
+END //
+
+
+-- [PROCEDURE]: Safely Assign Counsel to a Party (Member 1 Logic)
+CREATE PROCEDURE Assign_Counsel_To_Party(
+    IN p_Counsel_ID VARCHAR(50),
+    IN p_Lawyer_ID VARCHAR(50),
+    IN p_Party_ID VARCHAR(50),
+    IN p_Is_Lead BOOLEAN
+)
+BEGIN
+    -- Validate that the entity is actually an active lawyer
+    IF NOT EXISTS (SELECT 1 FROM LAWYER WHERE Entity_ID = p_Lawyer_ID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Validation Error: Entity_ID is not a registered Lawyer.';
+    END IF;
+
+    -- Validate that the party exists in the case
+    IF NOT EXISTS (SELECT 1 FROM CASE_PARTY WHERE Party_ID = p_Party_ID) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Validation Error: Party_ID does not exist.';
+    END IF;
+
+    -- Insert assignment
+    INSERT INTO CASE_COUNSEL (Counsel_ID, Lawyer_ID, Party_ID, Lead_Counsel_Flag)
+    VALUES (p_Counsel_ID, p_Lawyer_ID, p_Party_ID, p_Is_Lead);
+END //
+
 DELIMITER ;
 
 
 
 
 
--- Data insertion into all tables. Small scale
+
 
 
 -- 1. Insert Courts
@@ -258,7 +342,9 @@ INSERT INTO LAWYER VALUES
 
 -- 5. Insert Cases (Base + Subclasses)
 -- A past historical criminal case (Trial Court)
-INSERT INTO `CASE` VALUES ('CASE_900', 'CRT_DC_CHN', NULL, 'State vs. Historic Fraud', '2020-01-10', 'Closed');
+
+
+INSERT INTO `CASE` VALUES ('CASE_900', 'CRT_DC_CHN', NULL, 'State vs. Historic Fraud', '2020-01-10', 'Pending');
 INSERT INTO CRIMINAL_CASE VALUES ('CASE_900', 'FIR-2020-11', 10000.00, 'CBI');
 
 -- A current criminal case (Trial Court)
@@ -304,8 +390,19 @@ INSERT INTO STATUTE_CHARGE VALUES
 ('IPC_420', 'Cheating and Dishonesty', 'Inducing delivery of property via fraud.', 7),
 ('IPC_302', 'Murder', 'Punishment for murder.', 99);
 
+-- Add an extra lawyer to show diverse representation
+INSERT INTO LEGAL_ENTITY VALUES ('ENT_007', 'priya.desh@law.in', 'T-Nagar, Chennai');
+INSERT INTO PERSON VALUES ('ENT_007', '[Aadhaar Redacted 5]', 'Priya', 'Deshmukh', '1988-09-05');
+INSERT INTO LAWYER VALUES ('ENT_007', 'BAR-TN-2015', 'Civil Litigation', 'Deshmukh Legal');
+
+-- Add Priya as counsel for the Civil Case (CASE_3001) Plaintiff
+INSERT INTO CASE_COUNSEL VALUES ('CNSL_03', 'ENT_007', 'PRT_03', TRUE);
+
+-- REPLACE your DOCKET_CHARGE_SHEET block with this to include CHG_02
 INSERT INTO DOCKET_CHARGE_SHEET VALUES 
-('CHG_01', 'CASE_1001', 'ENT_002', 'IPC_420', '2024-11-01 09:30:00', 'Pending', NULL);
+('CHG_01', 'CASE_1001', 'ENT_002', 'IPC_420', '2024-11-01 09:30:00', 'Pending', NULL),
+('CHG_02', 'CASE_900', 'ENT_002', 'IPC_420', '2019-05-15 14:00:00', 'Guilty', '5 Years RI');
+
 
 -- 10. Insert Precedent Tags & Citations
 INSERT INTO PRECEDENT_TAG VALUES 
@@ -319,8 +416,6 @@ INSERT INTO CASE_TAG_MAPPING VALUES
 
 INSERT INTO CASE_CITATION VALUES 
 ('CIT_01', 'CASE_2001', 'CASE_900', 'Cited standard for intent to defraud in corporate entities.');
-
-
 
 
 
