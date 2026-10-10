@@ -296,7 +296,7 @@ WITH RankedJudgments AS (
         j.judgment_date,
         j.outcome,
         j.judgment_status,
-        ROW_NUMBER() OVER (PARTITION BY j.case_id ORDER BY j.judgment_date DESC) AS rank_order
+        ROW_NUMBER() OVER (PARTITION BY j.case_id ORDER BY j.judgment_date DESC, j.judgment_id DESC) AS rank_order
     FROM JUDGMENT j
     JOIN CASES c ON j.case_id = c.Case_ID
 )
@@ -328,7 +328,7 @@ SELECT
     h.courtroom,
     h.purpose,
     h.hearing_status,
-    LISTAGG(p.First_Name || ' ' || p.Last_Name || ' (' || hb.bench_role || ')', '; ') 
+    LISTAGG(p.First_Name || ' ' || p.Last_Name || ' (' || hb.bench_role || ')', '; ' ON OVERFLOW TRUNCATE '...' WITHOUT COUNT) 
         WITHIN GROUP (ORDER BY hb.bench_role DESC) AS presiding_bench
 FROM HEARING h
 JOIN CASES c ON h.case_id = c.Case_ID

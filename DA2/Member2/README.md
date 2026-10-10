@@ -208,14 +208,17 @@ END;
      - `CANCELLED` is terminal -> cannot transition to any other state (Raises `-20042`).
      - `ADJOURNED` can only transition to `SCHEDULED` (Raises `-20043`).
 2. **`TRG_PREVENT_HEARING_CLOSED` (`BEFORE INSERT ON HEARING`):**
-   - Blocks scheduling hearings for cases that are `Closed` or `Disposed` (Raises `-20045`).
+   - Blocks scheduling new or future-dated hearings for cases that are `Closed` or `Disposed` (Raises `-20045`).
+   - Permits loading historical/past hearings (`hearing_date < SYSDATE` with non-scheduled status) to maintain archival audit integrity.
 3. **`TRG_SYNC_CASE_ON_JUDGMENT` (`AFTER INSERT/UPDATE ON JUDGMENT`):**
-   - When judgment is delivered, updates `CASES.Status = 'Disposed'` (without abruptly marking `Closed`, preserving window for appeal).
+   - When a **final judgment** is delivered (`DELIVERED`/`PRONOUNCED`), updates `CASES.Status = 'Disposed'` (preserving appellate window).
+   - **Interim Judgment Rule:** Interim/preliminary/partial rulings (e.g. Interim Injunction, Partial Discharge) do NOT mark the case `Disposed`, preserving trial docketing for subsequent hearings.
 4. **`TRG_VALIDATE_APPEAL_JUDGMENT` (`BEFORE INSERT/UPDATE ON APPEAL`):**
-   - Enforces that judgment referenced in appeal belongs to the target case (Raises `-20048`).
-   - Enforces appeal filing date >= judgment date (Raises `-20049`).
+   - Enforces judgment ownership: The appeal's judgment must belong to the specified case or to its lower-court parent docket via `Parent_Case_ID` (Raises `-20048`).
+   - Enforces chronology: Appeal filing date >= judgment delivery date (Raises `-20049`).
+   - Enforces distinct courts: Lower court <> Higher court (Raises `-20050`).
 5. **`TRG_SYNC_CASE_ON_APPEAL` (`AFTER INSERT ON APPEAL`):**
-   - Updates `CASES.Status = 'Under Appeal'` upon appeal creation.
+   - Updates `CASES.Status = 'Under Appeal'` for active appeals (`PENDING` or `ADMITTED`). If an appellate docket is referenced, synchronizes both the appellate docket and the lower-court trial case.
 
 ---
 
@@ -238,7 +241,13 @@ END;
    - In Oracle SQL, `CASE` is a reserved keyword. The table is physically defined as `CASES`, with a compatibility view `CREATE OR REPLACE VIEW "CASE" AS SELECT * FROM CASES;` so that both conventions work seamlessly.
 2. **Multiple Judgments Support:**
    - In realistic judicial proceedings (and specifically required in the problem specification), a case can have multiple judgments (interim orders, partial discharges, final verdicts). Therefore, `JUDGMENT.case_id` is a regular foreign key **without** a unique constraint.
-3. **Lifecycle Statuses:**
-   - Filing -> `Pending` -> `Hearing` -> `Disposed` (upon Judgment) -> `Under Appeal` (upon Appeal registration). Cases are not forcibly set to `Closed` while appeal remedies remain available.
-4. **Court Tier Hierarchy:**
+3. **Appellate Case Model:**
+   - In Member 2, `APPEAL.case_id` represents the **case docket being appealed** (the case owning the challenged judgment). For compatibility with multi-tier case filing, procedures and triggers also accept an appellate case identifier if its DA1 `Parent_Case_ID` links to the lower-court case.
+4. **Lifecycle Statuses & Interim Orders:**
+   - Filing -> `Pending` -> `Hearing` -> `Disposed` (upon Final Judgment) -> `Under Appeal` (upon Appeal registration). Cases receiving interim or interlocutory orders remain in `Hearing` status so that trial proceedings may continue.
+5. **Court Tier Hierarchy:**
    - Indian 4-tier hierarchy: `Subordinate` (Level 1) < `District` (Level 2) < `High Court` (Level 3) < `Supreme` (Level 4). Appeals must proceed from lower tier to strictly higher tier.
+6. **Transaction Boundary Management:**
+   - Reusable stored procedures (`SCHEDULE_HEARING`, `REGISTER_APPEAL`) utilize internal `SAVEPOINT` management and delegate final `COMMIT`/`ROLLBACK` boundaries to the calling application or script. Dedicated demonstration blocks explicitly commit or rollback as appropriate.
+7. **Execution Reliability:**
+   - Master runner `run_all.sql` utilizes `WHENEVER SQLERROR EXIT FAILURE ROLLBACK;` and `WHENEVER OSERROR EXIT FAILURE;` to guarantee automated halt on genuine system faults while permitting handled PL/SQL exception demonstrations.

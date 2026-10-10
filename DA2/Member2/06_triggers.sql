@@ -76,6 +76,8 @@ END TRG_HEARING_STATUS_TRANS;
 
 -- -----------------------------------------------------------------------------
 -- 2. TRIGGER: TRG_PREVENT_HEARING_CLOSED
+-- Prevents scheduling new/future hearings for Closed or Disposed cases.
+-- Allows loading historical hearing records (past hearings) for disposed dockets.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE TRIGGER TRG_PREVENT_HEARING_CLOSED
 BEFORE INSERT ON HEARING
@@ -88,8 +90,11 @@ BEGIN
     FROM CASES 
     WHERE Case_ID = :NEW.case_id;
 
+    -- Block only if the case is Closed/Disposed AND the hearing is new/scheduled or future-dated
     IF UPPER(v_case_status) IN ('CLOSED', 'DISPOSED') THEN
-        RAISE_APPLICATION_ERROR(-20045, 'Lifecycle Violation: Cannot schedule hearing for case ''' || :NEW.case_id || ''' which is currently ' || v_case_status || '.');
+        IF :NEW.hearing_status = 'SCHEDULED' OR TRUNC(:NEW.hearing_date) >= TRUNC(SYSDATE) THEN
+            RAISE_APPLICATION_ERROR(-20045, 'Lifecycle Violation: Cannot schedule a new or future hearing for case ''' || :NEW.case_id || ''' which is currently ' || v_case_status || '.');
+        END IF;
     END IF;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
@@ -99,12 +104,20 @@ END TRG_PREVENT_HEARING_CLOSED;
 
 -- -----------------------------------------------------------------------------
 -- 3. TRIGGER: TRG_SYNC_CASE_ON_JUDGMENT
+-- Synchronizes case status to 'Disposed' upon delivery of a final judgment.
+-- Explicit Finality Criteria: Status is DELIVERED/PRONOUNCED and outcome does NOT
+-- represent an interim, interlocutory, or partial order (e.g. Interim Restitution, Partial Discharge).
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE TRIGGER TRG_SYNC_CASE_ON_JUDGMENT
-AFTER INSERT OR UPDATE OF judgment_status ON JUDGMENT
+AFTER INSERT OR UPDATE OF judgment_status, outcome ON JUDGMENT
 FOR EACH ROW
 BEGIN
-    IF :NEW.judgment_status = 'DELIVERED' THEN
+    IF :NEW.judgment_status IN ('DELIVERED', 'PRONOUNCED')
+       AND UPPER(:NEW.outcome) NOT LIKE '%INTERIM%'
+       AND UPPER(:NEW.outcome) NOT LIKE '%PARTIAL%'
+       AND UPPER(:NEW.outcome) NOT LIKE '%AD-INTERIM%'
+       AND UPPER(:NEW.outcome) NOT LIKE '%PRELIMINARY%'
+    THEN
         -- Transition case to 'Disposed' if it was in 'Pending' or 'Hearing'
         -- Do not overwrite if case is already flagged as 'Under Appeal'
         UPDATE CASES
@@ -117,6 +130,8 @@ END TRG_SYNC_CASE_ON_JUDGMENT;
 
 -- -----------------------------------------------------------------------------
 -- 4. TRIGGER: TRG_VALIDATE_APPEAL_JUDGMENT
+-- Enforces that an appeal's judgment belongs strictly to its specified case
+-- (supports direct trial case or higher-court appellate case linked via Parent_Case_ID).
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE TRIGGER TRG_VALIDATE_APPEAL_JUDGMENT
 BEFORE INSERT OR UPDATE ON APPEAL
@@ -124,6 +139,7 @@ FOR EACH ROW
 DECLARE
     v_judgment_case_id JUDGMENT.case_id%TYPE;
     v_judgment_date    JUDGMENT.judgment_date%TYPE;
+    v_parent_case_id   CASES.Parent_Case_ID%TYPE;
 BEGIN
     -- 1. Verify judgment belongs to the case specified in the appeal
     BEGIN
@@ -136,8 +152,16 @@ BEGIN
             RAISE_APPLICATION_ERROR(-20047, 'Integrity Violation: Judgment ID ''' || :NEW.judgment_id || ''' does not exist.');
     END;
 
+    -- Validate case ownership: either exact case match or valid parent case relationship
     IF v_judgment_case_id <> :NEW.case_id THEN
-        RAISE_APPLICATION_ERROR(-20048, 'Integrity Violation: Judgment ''' || :NEW.judgment_id || ''' belongs to case ''' || v_judgment_case_id || ''', not appeal case ''' || :NEW.case_id || '''.');
+        BEGIN
+            SELECT Parent_Case_ID INTO v_parent_case_id FROM CASES WHERE Case_ID = :NEW.case_id;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN v_parent_case_id := NULL;
+        END;
+        IF v_parent_case_id IS NULL OR v_parent_case_id <> v_judgment_case_id THEN
+            RAISE_APPLICATION_ERROR(-20048, 'Integrity Violation: Judgment ''' || :NEW.judgment_id || ''' belongs to case ''' || v_judgment_case_id || ''', not appeal case ''' || :NEW.case_id || ''' or its parent.');
+        END IF;
     END IF;
 
     -- 2. Validate chronology: appeal cannot precede judgment
@@ -154,15 +178,30 @@ END TRG_VALIDATE_APPEAL_JUDGMENT;
 
 -- -----------------------------------------------------------------------------
 -- 5. TRIGGER: TRG_SYNC_CASE_ON_APPEAL
+-- Synchronizes original case status to 'Under Appeal' when an active appeal is registered.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE TRIGGER TRG_SYNC_CASE_ON_APPEAL
 AFTER INSERT ON APPEAL
 FOR EACH ROW
+DECLARE
+    v_judgment_case_id JUDGMENT.case_id%TYPE;
 BEGIN
-    -- Synchronize original case status to reflect that an appeal is sub judice
-    UPDATE CASES
-    SET Status = 'Under Appeal'
-    WHERE Case_ID = :NEW.case_id;
+    -- Only update lifecycle status if appeal is active (PENDING or ADMITTED)
+    IF :NEW.appeal_status IN ('PENDING', 'ADMITTED') THEN
+        UPDATE CASES
+        SET Status = 'Under Appeal'
+        WHERE Case_ID = :NEW.case_id;
+
+        -- If :NEW.case_id is an appellate case, also mark the lower-court case
+        BEGIN
+            SELECT case_id INTO v_judgment_case_id FROM JUDGMENT WHERE judgment_id = :NEW.judgment_id;
+            UPDATE CASES
+            SET Status = 'Under Appeal'
+            WHERE Case_ID = v_judgment_case_id;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN NULL;
+        END;
+    END IF;
 END TRG_SYNC_CASE_ON_APPEAL;
 /
 

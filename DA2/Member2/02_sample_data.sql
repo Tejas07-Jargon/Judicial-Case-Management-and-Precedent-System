@@ -245,11 +245,11 @@ VALUES (
 -- 4. SEED DATA: APPEAL (6 Appeals covering PENDING, ADMITTED, DISPOSED, REJECTED)
 -- -----------------------------------------------------------------------------
 
--- Appeal 1: CASE_2001 against JDG_501 (District Court -> Madras High Court, Disposed)
+-- Appeal 1: CASE_900 against JDG_501 (District Court -> Madras High Court, Disposed)
 INSERT INTO APPEAL (appeal_id, case_id, judgment_id, lower_court_id, higher_court_id, filing_date, appeal_status, outcome, remarks)
 VALUES (
     'APL_701',
-    'CASE_2001',
+    'CASE_900',
     'JDG_501',
     'CRT_DC_CHN',
     'CRT_HC_TN',
@@ -259,12 +259,12 @@ VALUES (
     'Substantial question of law raised regarding digital evidence certification under Indian Evidence Act 65B.'
 );
 
--- Appeal 2: CASE_4002 against JDG_503 (District Court -> Madras High Court, Admitted)
+-- Appeal 2: CASE_4001 against JDG_503 (District Court -> Madras High Court, Admitted)
 -- (> 2 years case filing to judgment, subsequently appealed)
 INSERT INTO APPEAL (appeal_id, case_id, judgment_id, lower_court_id, higher_court_id, filing_date, appeal_status, outcome, remarks)
 VALUES (
     'APL_702',
-    'CASE_4002',
+    'CASE_4001',
     'JDG_503',
     'CRT_DC_CHN',
     'CRT_HC_TN',

@@ -141,8 +141,11 @@ BEGIN
         SELECT hearing_id INTO v_str_val FROM HEARING WHERE hearing_id = v_str_val;
         v_test_caught := TRUE;
         v_err_msg := 'Generated hearing ID: ' || v_str_val;
+        -- Rollback test insertion to maintain clean test baseline
+        ROLLBACK;
     EXCEPTION
         WHEN OTHERS THEN
+            ROLLBACK;
             v_err_msg := 'Failure in procedure: ' || SQLERRM;
     END;
     ASSERT_TEST('SCHEDULE_HEARING Valid Execution', v_test_caught, v_err_msg);

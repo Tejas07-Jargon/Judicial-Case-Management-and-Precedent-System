@@ -43,6 +43,8 @@ CREATE OR REPLACE PROCEDURE SCHEDULE_HEARING (
     v_case_status   CASES.Status%TYPE;
     v_new_id        VARCHAR2(50);
 BEGIN
+    SAVEPOINT sp_schedule_hearing;
+
     -- 1. Validate mandatory inputs
     IF p_case_id IS NULL OR TRIM(p_case_id) IS NULL THEN
         RAISE_APPLICATION_ERROR(-20001, 'Input Error: Case ID cannot be NULL or empty.');
@@ -111,19 +113,19 @@ BEGIN
     END IF;
 
     p_hearing_id := v_new_id;
-    COMMIT;
+    -- Note: Transaction boundary is controlled by caller (no hardcoded commit)
     
     DBMS_OUTPUT.PUT_LINE('[SUCCESS] Hearing ' || v_new_id || ' scheduled successfully for Case ' || p_case_id || ' on ' || TO_CHAR(p_hearing_date, 'YYYY-MM-DD'));
 
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        ROLLBACK;
+        ROLLBACK TO sp_schedule_hearing;
         RAISE_APPLICATION_ERROR(-20008, 'Integrity Error: Duplicate primary key generated for hearing.');
     WHEN VALUE_ERROR THEN
-        ROLLBACK;
+        ROLLBACK TO sp_schedule_hearing;
         RAISE_APPLICATION_ERROR(-20009, 'Data Error: A supplied parameter exceeds the allowed column length.');
     WHEN OTHERS THEN
-        ROLLBACK;
+        ROLLBACK TO sp_schedule_hearing;
         IF SQLCODE BETWEEN -20999 AND -20000 THEN
             RAISE;
         ELSE
@@ -153,6 +155,8 @@ CREATE OR REPLACE PROCEDURE REGISTER_APPEAL (
     v_active_appeal_cnt  NUMBER := 0;
     v_new_id             VARCHAR2(50);
 BEGIN
+    SAVEPOINT sp_register_appeal;
+
     -- 1. Validate mandatory inputs
     IF p_case_id IS NULL OR p_judgment_id IS NULL OR p_lower_court_id IS NULL OR p_higher_court_id IS NULL OR p_filing_date IS NULL THEN
         RAISE_APPLICATION_ERROR(-20011, 'Input Error: Case ID, Judgment ID, Lower Court, Higher Court, and Filing Date are all mandatory.');
@@ -177,9 +181,19 @@ BEGIN
             RAISE_APPLICATION_ERROR(-20013, 'Validation Error: Judgment ID ''' || p_judgment_id || ''' does not exist.');
     END;
 
-    -- 4. Verify that Judgment actually belongs to the specified Case
+    -- 4. Verify that Judgment belongs to the specified Case or its parent
     IF v_judgment_case_id <> p_case_id THEN
-        RAISE_APPLICATION_ERROR(-20014, 'Integrity Mismatch: Judgment ''' || p_judgment_id || ''' belongs to case ''' || v_judgment_case_id || ''', not specified case ''' || p_case_id || '''.');
+        DECLARE
+            v_parent_case_id CASES.Parent_Case_ID%TYPE;
+        BEGIN
+            SELECT Parent_Case_ID INTO v_parent_case_id FROM CASES WHERE Case_ID = p_case_id;
+            IF v_parent_case_id IS NULL OR v_parent_case_id <> v_judgment_case_id THEN
+                RAISE_APPLICATION_ERROR(-20014, 'Integrity Mismatch: Judgment ''' || p_judgment_id || ''' belongs to case ''' || v_judgment_case_id || ''', not specified case ''' || p_case_id || ''' or its parent.');
+            END IF;
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                RAISE_APPLICATION_ERROR(-20014, 'Integrity Mismatch: Judgment ''' || p_judgment_id || ''' belongs to case ''' || v_judgment_case_id || ''', not specified case ''' || p_case_id || '''.');
+        END;
     END IF;
 
     -- 5. Business Rule: Lower court and Higher court cannot be identical
@@ -272,20 +286,27 @@ BEGIN
     SET Status = 'Under Appeal'
     WHERE Case_ID = p_case_id;
 
+    -- If p_case_id was an appellate docket, also update the original trial case
+    IF v_judgment_case_id <> p_case_id THEN
+        UPDATE CASES
+        SET Status = 'Under Appeal'
+        WHERE Case_ID = v_judgment_case_id;
+    END IF;
+
     p_appeal_id := v_new_id;
-    COMMIT;
+    -- Note: Transaction boundary is controlled by caller (no hardcoded commit)
 
     DBMS_OUTPUT.PUT_LINE('[SUCCESS] Appeal ' || v_new_id || ' registered successfully for Case ' || p_case_id || ' from ' || v_lower_tier || ' to ' || v_higher_tier);
 
 EXCEPTION
     WHEN DUP_VAL_ON_INDEX THEN
-        ROLLBACK;
+        ROLLBACK TO sp_register_appeal;
         RAISE_APPLICATION_ERROR(-20021, 'Integrity Error: Duplicate primary key generated for appeal.');
     WHEN VALUE_ERROR THEN
-        ROLLBACK;
+        ROLLBACK TO sp_register_appeal;
         RAISE_APPLICATION_ERROR(-20022, 'Data Error: A parameter value exceeds allowable string limits.');
     WHEN OTHERS THEN
-        ROLLBACK;
+        ROLLBACK TO sp_register_appeal;
         IF SQLCODE BETWEEN -20999 AND -20000 THEN
             RAISE;
         ELSE
@@ -311,6 +332,7 @@ BEGIN
         p_remarks      => 'Special video-conferencing facility requested.',
         p_hearing_id   => v_hid
     );
+    COMMIT;
     DBMS_OUTPUT.PUT_LINE('Generated Hearing ID: ' || v_hid);
 END;
 /
@@ -369,6 +391,7 @@ BEGIN
         p_remarks         => 'Interlocutory appeal against partial discharge denial.',
         p_appeal_id       => v_aid
     );
+    COMMIT;
     DBMS_OUTPUT.PUT_LINE('Generated Appeal ID: ' || v_aid);
 END;
 /

@@ -18,6 +18,10 @@ SET SQLBLANKLINES ON;
 SET LINESIZE 220;
 SET PAGESIZE 50;
 
+-- Halt execution on unhandled SQL or OS error to prevent cascading failures
+WHENEVER SQLERROR EXIT FAILURE ROLLBACK;
+WHENEVER OSERROR EXIT FAILURE;
+
 PROMPT =====================================================================
 PROMPT STEP 1/9: Initializing DA1 Baseline & Cross-Module Prerequisite Schema
 PROMPT =====================================================================

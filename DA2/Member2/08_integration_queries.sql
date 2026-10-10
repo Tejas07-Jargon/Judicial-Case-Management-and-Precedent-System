@@ -42,7 +42,7 @@ SELECT
     END AS case_category,
     COUNT(DISTINCT h.hearing_id) AS total_hearings,
     TO_CHAR(MAX(h.hearing_date), 'YYYY-MM-DD') AS latest_hearing_date,
-    NVL(MAX(j.outcome), 'Pending Adjudication') AS latest_verdict,
+    NVL(MAX(j.outcome) KEEP (DENSE_RANK LAST ORDER BY j.judgment_date NULLS FIRST, j.judgment_id), 'Pending Adjudication') AS latest_verdict,
     TO_CHAR(MAX(j.judgment_date), 'YYYY-MM-DD') AS verdict_date,
     c.Status AS current_lifecycle_status
 FROM CASES c
@@ -138,8 +138,8 @@ SELECT
     p.First_Name || ' ' || p.Last_Name AS judge_name,
     ct.Court_Name AS primary_court,
     COUNT(DISTINCT h.hearing_id) AS total_hearings_presided,
-    SUM(CASE WHEN crim.Case_ID IS NOT NULL THEN 1 ELSE 0 END) AS criminal_hearings,
-    SUM(CASE WHEN civ.Case_ID IS NOT NULL THEN 1 ELSE 0 END) AS civil_hearings,
+    COUNT(DISTINCT CASE WHEN crim.Case_ID IS NOT NULL THEN h.hearing_id END) AS criminal_hearings,
+    COUNT(DISTINCT CASE WHEN civ.Case_ID IS NOT NULL THEN h.hearing_id END) AS civil_hearings,
     COUNT(DISTINCT jdg.judgment_id) AS total_judgments_on_docket
 FROM JUDGE j
 JOIN PERSON p ON j.Entity_ID = p.Entity_ID
