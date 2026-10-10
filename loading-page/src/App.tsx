@@ -1,12 +1,23 @@
+import { useState, useEffect } from 'react';
+import { CriminalDossierView } from './components/CriminalDossierView';
+import { CitationRankingView } from './components/CitationRankingView';
+import { JudicialReviewView } from './components/JudicialReviewView';
+import { PrecedentTaxonomyView } from './components/PrecedentTaxonomyView';
+import { IncidentManagementView } from './components/IncidentManagementView';
+import { ChargeSheetManagementView } from './components/ChargeSheetManagementView';
+import { CitationManagementView } from './components/CitationManagementView';
+import { api, HealthResponse } from './api';
+
+
 const particles = [
-  { x: "20%", y: "26%", delay: "1.4s", duration: "7.2s" },
-  { x: "27%", y: "67%", delay: "2.1s", duration: "8.4s" },
-  { x: "35%", y: "34%", delay: "3.4s", duration: "6.8s" },
-  { x: "43%", y: "73%", delay: "1.8s", duration: "7.7s" },
-  { x: "54%", y: "20%", delay: "2.8s", duration: "8.1s" },
-  { x: "61%", y: "64%", delay: "3.7s", duration: "7.1s" },
-  { x: "69%", y: "31%", delay: "2.3s", duration: "8.8s" },
-  { x: "77%", y: "59%", delay: "4.1s", duration: "7.4s" },
+  { x: '20%', y: '26%', delay: '1.4s', duration: '7.2s' },
+  { x: '27%', y: '67%', delay: '2.1s', duration: '8.4s' },
+  { x: '35%', y: '34%', delay: '3.4s', duration: '6.8s' },
+  { x: '43%', y: '73%', delay: '1.8s', duration: '7.7s' },
+  { x: '54%', y: '20%', delay: '2.8s', duration: '8.1s' },
+  { x: '61%', y: '64%', delay: '3.7s', duration: '7.1s' },
+  { x: '69%', y: '31%', delay: '2.3s', duration: '8.8s' },
+  { x: '77%', y: '59%', delay: '4.1s', duration: '7.4s' },
 ];
 
 function JudicialMark() {
@@ -80,7 +91,7 @@ function JudicialMark() {
   );
 }
 
-function Splash() {
+function Splash({ onEnterDashboard }: { onEnterDashboard: () => void }) {
   return (
     <section className="splash" aria-label="Application loading">
       <div className="ambient-light" />
@@ -131,8 +142,16 @@ function Splash() {
           </h1>
           <p>Managing Cases <b>•</b> Judgments <b>•</b> Appeals <b>•</b> Legal Precedents</p>
           <div className="loading-block">
-            <span className="loading-context">Case records <b>•</b> Judgments <b>•</b> Appeals <b>•</b> Precedents</span>
+            <span className="loading-context">Member 3: Criminal Cases, Charges & Precedents</span>
             <div className="progress-track"><span /></div>
+          </div>
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={onEnterDashboard}
+              className="bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#bda36d] px-6 py-2.5 rounded-lg text-sm font-medium tracking-wide shadow-lg hover:shadow-[#d2bd8b]/10 transition cursor-pointer"
+            >
+              Enter Judicial Dashboard →
+            </button>
           </div>
         </div>
       </main>
@@ -140,10 +159,226 @@ function Splash() {
   );
 }
 
+type TabType =
+  | 'dossier'
+  | 'citations'
+  | 'judicial-review'
+  | 'taxonomy'
+  | 'incidents'
+  | 'charge-sheets'
+  | 'citations-crud';
+
 export default function App() {
+  const [showSplash, setShowSplash] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('dossier');
+  const [backendHealth, setBackendHealth] = useState<HealthResponse | null>(null);
+  const [checkingBackend, setCheckingBackend] = useState(true);
+
+  useEffect(() => {
+    // Health probe to monitor backend and database status
+    api
+      .checkHealth()
+      .then((data) => setBackendHealth(data))
+      .catch(() => setBackendHealth(null))
+      .finally(() => setCheckingBackend(false));
+  }, []);
+
+  if (showSplash) {
+    return (
+      <div className="app-shell">
+        <Splash onEnterDashboard={() => setShowSplash(false)} />
+      </div>
+    );
+  }
+
   return (
-    <div className="app-shell">
-      <Splash />
+    <div className="min-h-screen bg-[#0a0b0d] text-[#eee9dc] font-sans flex flex-col">
+      {/* Top Header */}
+      <header className="border-b border-[#1e2229] bg-[#0d0f12] sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-[#24211a] border border-[#7d6d4e] flex items-center justify-center text-[#d2bd8b] font-bold text-sm">
+              ⚖
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold tracking-wide text-[#f1e6c6]">
+                Judicial Case Management & Precedent System
+              </h1>
+              <p className="text-[10px] text-[#8c887d]">
+                Member 3 (Tejas) • Criminal Cases, Charges & Legal Precedents
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs">
+            {/* Backend Connectivity Indicator */}
+            <div className="flex items-center gap-1.5 bg-[#14171d] border border-[#232730] px-3 py-1.5 rounded-full">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  checkingBackend
+                    ? 'bg-amber-400 animate-pulse'
+                    : backendHealth?.status === 'UP'
+                    ? 'bg-emerald-400'
+                    : 'bg-rose-500'
+                }`}
+              />
+              <span className="text-[#a39e93] text-[11px]">
+                {checkingBackend
+                  ? 'Checking API...'
+                  : backendHealth?.status === 'UP'
+                  ? 'Backend Active'
+                  : 'Backend Offline'}
+              </span>
+            </div>
+
+            {/* Back to Splash Button */}
+            <button
+              onClick={() => setShowSplash(true)}
+              className="text-[#8c887d] hover:text-[#d2bd8b] transition cursor-pointer text-xs"
+            >
+              Splash View
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Layout Container */}
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
+        {/* Navigation Sidebar */}
+        <nav className="w-full md:w-64 shrink-0 space-y-1">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-[#7d796e] px-3 mb-2">
+            Analytical Workflows
+          </div>
+
+          <button
+            onClick={() => setActiveTab('dossier')}
+            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+              activeTab === 'dossier'
+                ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
+                : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+            }`}
+          >
+            <span>📁</span>
+            <span>Criminal Case Dossier</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('citations')}
+            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+              activeTab === 'citations'
+                ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
+                : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+            }`}
+          >
+            <span>📊</span>
+            <span>Citation Ranking</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('judicial-review')}
+            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+              activeTab === 'judicial-review'
+                ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
+                : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+            }`}
+          >
+            <span>🔍</span>
+            <span>Judicial Review Analysis</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('taxonomy')}
+            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+              activeTab === 'taxonomy'
+                ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
+                : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+            }`}
+          >
+            <span>🏷️</span>
+            <span>Precedent Taxonomy</span>
+          </button>
+
+          {/* CRUD Management Workflows */}
+          <div className="pt-4 mt-4 border-t border-[#1e2229]">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-[#d2bd8b] px-3 mb-2 flex items-center justify-between">
+              <span>CRUD Interfaces</span>
+              <span className="text-[9px] bg-[#24211a] border border-[#7d6d4e] px-1.5 py-0.5 rounded text-[#f1e6c6]">
+                DA2
+              </span>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('incidents')}
+              className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'incidents'
+                  ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
+                  : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+              }`}
+            >
+              <span>📍</span>
+              <span>Incident Management</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('charge-sheets')}
+              className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'charge-sheets'
+                  ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
+                  : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+              }`}
+            >
+              <span>📜</span>
+              <span>Charge Sheet Management</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('citations-crud')}
+              className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'citations-crud'
+                  ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
+                  : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+              }`}
+            >
+              <span>⚖️</span>
+              <span>Judgment Citations</span>
+            </button>
+          </div>
+
+          {/* Database Infrastructure Notice */}
+          <div className="pt-5 border-t border-[#1e2229] mt-5 px-3 text-[11px] text-[#736f66] space-y-2">
+            <span className="font-semibold text-[#8c887d] block">Architecture Notes:</span>
+            <p className="leading-relaxed">
+              Target DB: <code className="text-[#a39e93]">DBMS_DA2_TEST</code>
+            </p>
+            <p className="leading-relaxed">
+              Engine: <code className="text-[#a39e93]">MySQL 8.0+</code>
+            </p>
+            <p className="leading-relaxed text-[10px]">
+              Full CRUD: <code className="text-[#a39e93]">INCIDENT</code>,{' '}
+              <code className="text-[#a39e93]">DOCKET_CHARGE_SHEET</code>,{' '}
+              <code className="text-[#a39e93]">JUDGMENT_CITATION</code>,{' '}
+              <code className="text-[#a39e93]">CASE_TAG_MAPPING</code>
+            </p>
+          </div>
+        </nav>
+
+        {/* Main Workspace Area */}
+        <main className="flex-1 min-w-0 bg-[#0e1013] border border-[#1e2229] rounded-2xl p-6 shadow-sm">
+          {activeTab === 'dossier' && <CriminalDossierView />}
+          {activeTab === 'citations' && <CitationRankingView />}
+          {activeTab === 'judicial-review' && <JudicialReviewView />}
+          {activeTab === 'taxonomy' && <PrecedentTaxonomyView />}
+          {activeTab === 'incidents' && <IncidentManagementView />}
+          {activeTab === 'charge-sheets' && <ChargeSheetManagementView />}
+          {activeTab === 'citations-crud' && <CitationManagementView />}
+        </main>
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t border-[#1e2229] py-4 text-center text-[11px] text-[#66635b]">
+        Judicial Case Management and Precedent System • Member 3 Module (Tejas) • Vite + Express + MySQL 8.0
+      </footer>
     </div>
   );
 }
+
