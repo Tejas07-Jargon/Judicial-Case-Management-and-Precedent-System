@@ -5,6 +5,12 @@ import path from 'node:path'
 
 const siteConfiguration: FigmaSiteConfiguration = {
   title: 'Judicial Case Management and Precedent System',
+  icons: {
+    icon: '/logo.png',
+  },
+  openGraph: {
+    image: '/logo.png',
+  },
 }
 
 

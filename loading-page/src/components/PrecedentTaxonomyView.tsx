@@ -5,6 +5,15 @@ import {
   CaseTagItem,
   ApiClientError,
 } from '../api';
+import {
+  IconTag,
+  IconSearch,
+  IconPlus,
+  IconX,
+  IconCheckCircle,
+  IconAlertCircle,
+  IconTrash,
+} from './Icons';
 
 export function PrecedentTaxonomyView() {
   const [searchQuery, setSearchQuery] = useState('Corporate');
@@ -126,25 +135,23 @@ export function PrecedentTaxonomyView() {
     }
   };
 
-
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-[#f1e6c6] tracking-wide">
-          Precedent Taxonomy & Case Tag Mapping
+        <h2 className="text-xl font-semibold text-[#f1e6c6] tracking-wide flex items-center gap-2">
+          <IconTag className="w-5 h-5 text-[#d2bd8b]" />
+          <span>Precedent Taxonomy & Case Tag Mapping</span>
         </h2>
         <p className="text-xs text-[#a39e93] mt-1">
-          Explore legal subjects, doctrine classifications, and mapped judicial precedents across{' '}
-          <code className="text-[#d2bd8b] bg-[#14171a] px-1.5 py-0.5 rounded">PRECEDENT_TAG</code> and{' '}
-          <code className="text-[#d2bd8b] bg-[#14171a] px-1.5 py-0.5 rounded">CASE_TAG_MAPPING</code>.
+          Explore legal subjects, doctrine classifications, and mapped judicial precedents across precedent taxonomy categories.
         </p>
       </div>
 
       {/* SECTION 1: KEYWORD SEARCH */}
-      <div className="bg-[#121519] border border-[#232730] rounded-xl p-5 shadow-sm space-y-4">
-        <h3 className="text-sm font-medium text-[#f1e6c6]">
-          1. Search Precedent Tags & Associated Decisions (Query 7)
+      <div className="bg-[#12161f] border border-[#202532] rounded-xl p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-serif font-medium text-[#f1e6c6]">
+          1. Search Precedent Tags & Associated Decisions
         </h3>
 
         <form
@@ -155,20 +162,24 @@ export function PrecedentTaxonomyView() {
           className="flex flex-wrap gap-3 items-center"
         >
           <div className="relative flex-1 min-w-[240px]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#736f66]">
+              <IconSearch className="w-4 h-4" />
+            </div>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search taxonomy keyword (e.g. Corporate, Fraud, Cyber)"
-              className="w-full bg-[#1a1e24] border border-[#2b2e35] rounded-lg px-4 py-2 text-xs text-[#eee9dc] placeholder-[#66635b] focus:outline-none focus:border-[#d2bd8b]"
+              className="w-full bg-[#181d28] border border-[#2c3445] rounded-xl pl-9 pr-4 py-2 text-xs text-[#eee9dc] placeholder-[#66635b] focus:outline-none focus:border-[#d2bd8b]"
             />
           </div>
           <button
             type="submit"
             disabled={searchLoading}
-            className="bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#7d6d4e] px-4 py-2 rounded-lg text-xs font-medium transition cursor-pointer disabled:opacity-50"
+            className="bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#bda36d] px-4 py-2 rounded-xl text-xs font-medium transition cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
           >
-            {searchLoading ? 'Searching...' : 'Search Tags'}
+            <IconSearch className="w-3.5 h-3.5 text-[#d2bd8b]" />
+            <span>{searchLoading ? 'Searching...' : 'Search Tags'}</span>
           </button>
           <button
             type="button"
@@ -176,7 +187,7 @@ export function PrecedentTaxonomyView() {
               setSearchQuery('Corporate');
               executeTagSearch('Corporate');
             }}
-            className="text-xs text-[#d2bd8b] hover:underline px-2 py-1"
+            className="text-xs text-[#d2bd8b] hover:underline px-2 py-1 font-medium cursor-pointer"
           >
             Sample: 'Corporate'
           </button>
@@ -184,11 +195,14 @@ export function PrecedentTaxonomyView() {
 
         {/* Search Error */}
         {searchError && (
-          <div className="bg-[#241212] border border-[#6b2c2c] text-[#f1a8a8] px-3 py-2 rounded text-xs flex justify-between">
-            <span>{searchError}</span>
+          <div className="bg-[#241212] border border-[#6b2c2c] text-[#f1a8a8] px-3.5 py-2.5 rounded-xl text-xs flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <IconAlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{searchError}</span>
+            </div>
             <button
               onClick={() => executeTagSearch(searchQuery)}
-              className="underline hover:text-white"
+              className="underline hover:text-white cursor-pointer font-medium"
             >
               Retry
             </button>
@@ -197,16 +211,17 @@ export function PrecedentTaxonomyView() {
 
         {/* Search Loading */}
         {searchLoading && (
-          <div className="text-center py-4 text-xs text-[#8c887d] animate-pulse">
-            Searching taxonomy catalog...
+          <div className="text-center py-6 text-xs text-[#8c887d] animate-pulse space-y-2">
+            <div className="w-5 h-5 border-2 border-[#d2bd8b] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p>Searching precedent taxonomy catalog...</p>
           </div>
         )}
 
         {/* Search Results */}
         {!searchLoading && searchResults.length > 0 && (
-          <div className="overflow-x-auto border border-[#1e2229] rounded-lg">
+          <div className="overflow-x-auto border border-[#1f2430] rounded-xl overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#171a20] text-[#a39e93] text-[10px] uppercase border-b border-[#1e2229]">
+              <thead className="bg-[#141822] text-[#8c887d] text-[10px] uppercase border-b border-[#1f2430]">
                 <tr>
                   <th className="py-2.5 px-3">Taxonomy Tag</th>
                   <th className="py-2.5 px-3">Case Title & ID</th>
@@ -215,9 +230,9 @@ export function PrecedentTaxonomyView() {
                   <th className="py-2.5 px-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e2229]">
+              <tbody className="divide-y divide-[#181d26]">
                 {searchResults.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-[#15181f] transition">
+                  <tr key={idx} className="hover:bg-[#161b25] transition">
                     <td className="py-2.5 px-3 font-medium text-[#d2bd8b]">
                       #{item.precedentTag}
                       <span className="block text-[10px] text-[#66635b]">ID: {item.tagId}</span>
@@ -234,10 +249,10 @@ export function PrecedentTaxonomyView() {
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                           item.jurisdictionType === 'Criminal'
-                            ? 'bg-[#291818] text-[#e89d9d]'
+                            ? 'bg-[#291818] text-[#e89d9d] border border-rose-900/40'
                             : item.jurisdictionType === 'Civil'
-                            ? 'bg-[#182429] text-[#9dcce8]'
-                            : 'bg-[#212418] text-[#cce89d]'
+                            ? 'bg-[#182429] text-[#9dcce8] border border-blue-900/40'
+                            : 'bg-[#212418] text-[#cce89d] border border-amber-900/40'
                         }`}
                       >
                         {item.jurisdictionType}
@@ -253,9 +268,9 @@ export function PrecedentTaxonomyView() {
       </div>
 
       {/* SECTION 2: CASE TAG LOOKUP */}
-      <div className="bg-[#121519] border border-[#232730] rounded-xl p-5 shadow-sm space-y-4">
-        <h3 className="text-sm font-medium text-[#f1e6c6]">
-          2. Inspect Tags Assigned to a Specific Case (Query 8)
+      <div className="bg-[#12161f] border border-[#202532] rounded-xl p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-serif font-medium text-[#f1e6c6]">
+          2. Inspect Tags Assigned to a Specific Case
         </h3>
 
         <form
@@ -271,15 +286,16 @@ export function PrecedentTaxonomyView() {
               value={caseIdInput}
               onChange={(e) => setCaseIdInput(e.target.value)}
               placeholder="Enter Case ID (e.g. CASE_800, CASE_1002)"
-              className="w-full bg-[#1a1e24] border border-[#2b2e35] rounded-lg px-4 py-2 text-xs text-[#eee9dc] placeholder-[#66635b] focus:outline-none focus:border-[#d2bd8b]"
+              className="w-full bg-[#181d28] border border-[#2c3445] rounded-xl px-4 py-2 text-xs text-[#eee9dc] placeholder-[#66635b] focus:outline-none focus:border-[#d2bd8b]"
             />
           </div>
           <button
             type="submit"
             disabled={caseLoading}
-            className="bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#7d6d4e] px-4 py-2 rounded-lg text-xs font-medium transition cursor-pointer disabled:opacity-50"
+            className="bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#bda36d] px-4 py-2 rounded-xl text-xs font-medium transition cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
           >
-            {caseLoading ? 'Inspecting...' : 'Lookup Tags'}
+            <IconTag className="w-3.5 h-3.5 text-[#d2bd8b]" />
+            <span>{caseLoading ? 'Inspecting...' : 'Lookup Tags'}</span>
           </button>
           <button
             type="button"
@@ -287,7 +303,7 @@ export function PrecedentTaxonomyView() {
               setCaseIdInput('CASE_800');
               executeCaseTagLookup('CASE_800');
             }}
-            className="text-xs text-[#d2bd8b] hover:underline px-2 py-1"
+            className="text-xs text-[#d2bd8b] hover:underline px-2 py-1 font-medium cursor-pointer"
           >
             Sample: 'CASE_800'
           </button>
@@ -295,11 +311,14 @@ export function PrecedentTaxonomyView() {
 
         {/* Case Tag Error */}
         {caseError && (
-          <div className="bg-[#241212] border border-[#6b2c2c] text-[#f1a8a8] px-3 py-2 rounded text-xs flex justify-between">
-            <span>{caseError}</span>
+          <div className="bg-[#241212] border border-[#6b2c2c] text-[#f1a8a8] px-3.5 py-2.5 rounded-xl text-xs flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <IconAlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{caseError}</span>
+            </div>
             <button
               onClick={() => executeCaseTagLookup(caseIdInput)}
-              className="underline hover:text-white"
+              className="underline hover:text-white cursor-pointer font-medium"
             >
               Retry
             </button>
@@ -308,40 +327,47 @@ export function PrecedentTaxonomyView() {
 
         {/* Case Tag Loading */}
         {caseLoading && (
-          <div className="text-center py-4 text-xs text-[#8c887d] animate-pulse">
-            Querying assigned taxonomy mappings...
+          <div className="text-center py-6 text-xs text-[#8c887d] animate-pulse space-y-2">
+            <div className="w-5 h-5 border-2 border-[#d2bd8b] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p>Retrieving assigned taxonomy mappings...</p>
           </div>
         )}
 
         {/* Tag Mutation Notifications */}
         {tagMutationSuccess && (
-          <div className="bg-emerald-950/40 border border-emerald-800 text-emerald-200 px-3 py-2 rounded text-xs flex justify-between items-center">
-            <span>✓ {tagMutationSuccess}</span>
+          <div className="bg-emerald-950/40 border border-emerald-800/60 text-emerald-200 px-3.5 py-2.5 rounded-xl text-xs flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <IconCheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{tagMutationSuccess}</span>
+            </div>
             <button
               onClick={() => setTagMutationSuccess(null)}
-              className="text-emerald-400 hover:text-emerald-200 text-sm font-bold"
+              className="text-emerald-400 hover:text-emerald-200 cursor-pointer"
             >
-              ×
+              <IconX className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
 
         {tagMutationError && (
-          <div className="bg-rose-950/40 border border-rose-800 text-rose-200 px-3 py-2 rounded text-xs flex justify-between items-center">
-            <span>⚠ {tagMutationError}</span>
+          <div className="bg-rose-950/40 border border-rose-800/60 text-rose-200 px-3.5 py-2.5 rounded-xl text-xs flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <IconAlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{tagMutationError}</span>
+            </div>
             <button
               onClick={() => setTagMutationError(null)}
-              className="text-rose-400 hover:text-rose-200 text-sm font-bold"
+              className="text-rose-400 hover:text-rose-200 cursor-pointer"
             >
-              ×
+              <IconX className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
 
         {/* Case Tag Results */}
         {!caseLoading && caseTags.length > 0 && (
-          <div className="bg-[#0e1013] border border-[#1a1e24] p-4 rounded-lg space-y-4 text-xs">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1e2229] pb-2">
+          <div className="bg-[#0e1014] border border-[#1f2430] p-4 rounded-xl space-y-4 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1c212c] pb-2">
               <span className="font-medium text-[#f1e6c6]">
                 {caseTags[0].caseTitle}{' '}
                 <span className="text-[#8c887d] font-normal font-mono">({caseTags[0].caseId})</span>
@@ -351,12 +377,12 @@ export function PrecedentTaxonomyView() {
               </span>
             </div>
             <div>
-              <span className="text-[#8c887d] block text-[11px] mb-2">Mapped Precedent Tags:</span>
+              <span className="text-[#8c887d] block text-[11px] mb-2 font-medium">Mapped Precedent Tags:</span>
               <div className="flex flex-wrap gap-2">
                 {caseTags.map((tag, idx) => (
                   <span
                     key={idx}
-                    className="bg-[#1b2028] text-[#d2bd8b] border border-[#383d47] pl-2.5 pr-1.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1.5"
+                    className="bg-[#181d28] text-[#d2bd8b] border border-[#2c3445] pl-2.5 pr-1.5 py-1 rounded-lg text-xs font-medium inline-flex items-center gap-1.5"
                   >
                     <span>#{tag.assignedTag}</span>
                     <span className="text-[10px] text-[#7d796e]">({tag.tagId})</span>
@@ -364,9 +390,9 @@ export function PrecedentTaxonomyView() {
                       onClick={() => handleRemoveTag(tag.tagId)}
                       disabled={tagMutating}
                       title="Remove Tag Mapping"
-                      className="ml-1 text-[#8c887d] hover:text-rose-400 font-bold px-1 rounded hover:bg-rose-950/40 transition cursor-pointer"
+                      className="ml-1 text-[#8c887d] hover:text-rose-400 p-0.5 rounded hover:bg-rose-950/40 transition cursor-pointer"
                     >
-                      ×
+                      <IconX className="w-3 h-3" />
                     </button>
                   </span>
                 ))}
@@ -374,13 +400,13 @@ export function PrecedentTaxonomyView() {
             </div>
 
             {/* Inline Add Tag */}
-            <div className="pt-3 border-t border-[#1e2229] flex flex-wrap items-center gap-2">
-              <span className="text-[11px] text-[#a39e93] font-medium">+ Assign Precedent Tag:</span>
+            <div className="pt-3 border-t border-[#1c212c] flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-[#a39e93] font-medium">Assign Precedent Tag:</span>
               <select
                 value={selectedTagToAssign}
                 onChange={(e) => setSelectedTagToAssign(e.target.value)}
                 disabled={tagMutating}
-                className="bg-[#181b22] border border-[#2b313d] rounded px-2.5 py-1 text-xs text-[#eee9dc] outline-none"
+                className="bg-[#181d28] border border-[#2c3445] rounded-xl px-3 py-1.5 text-xs text-[#eee9dc] outline-none"
               >
                 {availableTags.map((t) => (
                   <option key={t.tagId} value={t.tagId}>
@@ -392,26 +418,27 @@ export function PrecedentTaxonomyView() {
                 type="button"
                 onClick={handleAddTag}
                 disabled={tagMutating || !selectedTagToAssign}
-                className="px-3 py-1 bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#bda36d] rounded text-xs font-medium transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#bda36d] rounded-xl text-xs font-medium transition cursor-pointer disabled:opacity-50"
               >
-                {tagMutating ? 'Mapping...' : 'Assign Tag'}
+                <IconPlus className="w-3 h-3 text-[#d2bd8b]" />
+                <span>{tagMutating ? 'Mapping...' : 'Assign Tag'}</span>
               </button>
             </div>
           </div>
         )}
 
         {!caseLoading && !caseError && caseTags.length === 0 && (
-          <div className="bg-[#0e1013] border border-[#1a1e24] p-4 rounded-lg space-y-3 text-xs">
+          <div className="bg-[#0e1014] border border-[#1f2430] p-4 rounded-xl space-y-3 text-xs">
             <p className="text-[#8c887d] text-center">
               No precedent tags currently mapped to <code className="text-[#d2bd8b]">{caseIdInput}</code>.
             </p>
-            <div className="pt-2 border-t border-[#1e2229] flex flex-wrap items-center justify-center gap-2">
+            <div className="pt-2 border-t border-[#1c212c] flex flex-wrap items-center justify-center gap-2">
               <span className="text-[11px] text-[#a39e93] font-medium">Assign Initial Tag:</span>
               <select
                 value={selectedTagToAssign}
                 onChange={(e) => setSelectedTagToAssign(e.target.value)}
                 disabled={tagMutating}
-                className="bg-[#181b22] border border-[#2b313d] rounded px-2.5 py-1 text-xs text-[#eee9dc] outline-none"
+                className="bg-[#181d28] border border-[#2c3445] rounded-xl px-3 py-1.5 text-xs text-[#eee9dc] outline-none"
               >
                 {availableTags.map((t) => (
                   <option key={t.tagId} value={t.tagId}>
@@ -423,9 +450,10 @@ export function PrecedentTaxonomyView() {
                 type="button"
                 onClick={handleAddTag}
                 disabled={tagMutating || !selectedTagToAssign}
-                className="px-3 py-1 bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#bda36d] rounded text-xs font-medium transition cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#bda36d] rounded-xl text-xs font-medium transition cursor-pointer disabled:opacity-50"
               >
-                {tagMutating ? 'Mapping...' : 'Assign Tag'}
+                <IconPlus className="w-3 h-3 text-[#d2bd8b]" />
+                <span>{tagMutating ? 'Mapping...' : 'Assign Tag'}</span>
               </button>
             </div>
           </div>
@@ -434,4 +462,3 @@ export function PrecedentTaxonomyView() {
     </div>
   );
 }
-

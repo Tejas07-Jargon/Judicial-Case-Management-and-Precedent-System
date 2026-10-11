@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { DashboardOverview } from './components/DashboardOverview';
 import { CriminalDossierView } from './components/CriminalDossierView';
 import { CitationRankingView } from './components/CitationRankingView';
 import { JudicialReviewView } from './components/JudicialReviewView';
@@ -6,18 +7,29 @@ import { PrecedentTaxonomyView } from './components/PrecedentTaxonomyView';
 import { IncidentManagementView } from './components/IncidentManagementView';
 import { ChargeSheetManagementView } from './components/ChargeSheetManagementView';
 import { CitationManagementView } from './components/CitationManagementView';
+import {
+  IconLayoutDashboard,
+  IconFileText,
+  IconAward,
+  IconScale,
+  IconTag,
+  IconBriefcase,
+  IconMapPin,
+  IconCheckCircle,
+  IconAlertCircle,
+  IconRefresh,
+} from './components/Icons';
 import { api, HealthResponse } from './api';
 
-
 const particles = [
-  { x: '20%', y: '26%', delay: '1.4s', duration: '7.2s' },
-  { x: '27%', y: '67%', delay: '2.1s', duration: '8.4s' },
-  { x: '35%', y: '34%', delay: '3.4s', duration: '6.8s' },
-  { x: '43%', y: '73%', delay: '1.8s', duration: '7.7s' },
-  { x: '54%', y: '20%', delay: '2.8s', duration: '8.1s' },
-  { x: '61%', y: '64%', delay: '3.7s', duration: '7.1s' },
-  { x: '69%', y: '31%', delay: '2.3s', duration: '8.8s' },
-  { x: '77%', y: '59%', delay: '4.1s', duration: '7.4s' },
+  { x: '20%', y: '26%', delay: '0.4s', duration: '4.2s' },
+  { x: '27%', y: '67%', delay: '0.8s', duration: '5.1s' },
+  { x: '35%', y: '34%', delay: '1.2s', duration: '4.4s' },
+  { x: '43%', y: '73%', delay: '0.6s', duration: '4.7s' },
+  { x: '54%', y: '20%', delay: '1.0s', duration: '5.0s' },
+  { x: '61%', y: '64%', delay: '1.4s', duration: '4.5s' },
+  { x: '69%', y: '31%', delay: '0.9s', duration: '5.2s' },
+  { x: '77%', y: '59%', delay: '1.5s', duration: '4.8s' },
 ];
 
 function JudicialMark() {
@@ -91,9 +103,9 @@ function JudicialMark() {
   );
 }
 
-function Splash({ onEnterDashboard }: { onEnterDashboard: () => void }) {
+function Splash() {
   return (
-    <section className="splash" aria-label="Application loading">
+    <section className="splash" aria-label="Initializing judicial management system" role="status">
       <div className="ambient-light" />
       <div className="architectural-grid" />
       <div className="columns-bg" />
@@ -140,18 +152,12 @@ function Splash({ onEnterDashboard }: { onEnterDashboard: () => void }) {
             <span>Judicial Case Management</span>
             <span>and Precedent System</span>
           </h1>
-          <p>Managing Cases <b>•</b> Judgments <b>•</b> Appeals <b>•</b> Legal Precedents</p>
+          <p>Adjudication Registry <b>•</b> Precedent Citations <b>•</b> Statutory Compliance</p>
           <div className="loading-block">
-            <span className="loading-context">Member 3: Criminal Cases, Charges & Precedents</span>
+            <span className="loading-context" aria-live="polite">
+              Loading Case Management Registry...
+            </span>
             <div className="progress-track"><span /></div>
-          </div>
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={onEnterDashboard}
-              className="bg-[#24211a] hover:bg-[#342f24] text-[#f1e6c6] border border-[#bda36d] px-6 py-2.5 rounded-lg text-sm font-medium tracking-wide shadow-lg hover:shadow-[#d2bd8b]/10 transition cursor-pointer"
-            >
-              Enter Judicial Dashboard →
-            </button>
           </div>
         </div>
       </main>
@@ -159,7 +165,8 @@ function Splash({ onEnterDashboard }: { onEnterDashboard: () => void }) {
   );
 }
 
-type TabType =
+export type TabType =
+  | 'overview'
   | 'dossier'
   | 'citations'
   | 'judicial-review'
@@ -169,13 +176,27 @@ type TabType =
   | 'citations-crud';
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('dossier');
+  const [showSplash, setShowSplash] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [backendHealth, setBackendHealth] = useState<HealthResponse | null>(null);
   const [checkingBackend, setCheckingBackend] = useState(true);
 
+  // Automatic loading sequence transition
   useEffect(() => {
-    // Health probe to monitor backend and database status
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const transitionDelay = prefersReducedMotion ? 350 : 2500;
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, transitionDelay);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Proactive background health check (independent of splash transition)
+  useEffect(() => {
     api
       .checkHealth()
       .then((data) => setBackendHealth(data))
@@ -186,33 +207,44 @@ export default function App() {
   if (showSplash) {
     return (
       <div className="app-shell">
-        <Splash onEnterDashboard={() => setShowSplash(false)} />
+        <Splash />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0b0d] text-[#eee9dc] font-sans flex flex-col">
+    <div className="min-h-screen bg-[#090b0e] text-[#eee9dc] font-sans flex flex-col antialiased">
       {/* Top Header */}
-      <header className="border-b border-[#1e2229] bg-[#0d0f12] sticky top-0 z-40">
+      <header className="border-b border-[#1b1f28] bg-[#0c0f14]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-[#24211a] border border-[#7d6d4e] flex items-center justify-center text-[#d2bd8b] font-bold text-sm">
-              ⚖
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#131720] border border-[#7d6d4e]/60 flex items-center justify-center overflow-hidden shadow-sm shrink-0">
+              <img
+                src="/logo.png"
+                alt="Judicial Case Management System Logo"
+                className="w-full h-full object-contain p-0.5"
+              />
             </div>
             <div>
               <h1 className="text-sm font-semibold tracking-wide text-[#f1e6c6]">
                 Judicial Case Management & Precedent System
               </h1>
               <p className="text-[10px] text-[#8c887d]">
-                Member 3 (Tejas) • Criminal Cases, Charges & Legal Precedents
+                High Court & Trial Bench Registry • Member 3 Module (Tejas)
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
-            {/* Backend Connectivity Indicator */}
-            <div className="flex items-center gap-1.5 bg-[#14171d] border border-[#232730] px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-3 text-xs">
+            {/* Backend Connectivity Status Indicator */}
+            <div
+              className="flex items-center gap-2 bg-[#12161f] border border-[#212735] px-3 py-1.5 rounded-full"
+              title={
+                backendHealth?.status === 'UP'
+                  ? 'Database connection active'
+                  : 'Backend service unreachable'
+              }
+            >
               <span
                 className={`w-2 h-2 rounded-full ${
                   checkingBackend
@@ -222,22 +254,14 @@ export default function App() {
                     : 'bg-rose-500'
                 }`}
               />
-              <span className="text-[#a39e93] text-[11px]">
+              <span className="text-[#a39e93] text-[11px] font-medium">
                 {checkingBackend
                   ? 'Checking API...'
                   : backendHealth?.status === 'UP'
-                  ? 'Backend Active'
+                  ? 'Registry Online'
                   : 'Backend Offline'}
               </span>
             </div>
-
-            {/* Back to Splash Button */}
-            <button
-              onClick={() => setShowSplash(true)}
-              className="text-[#8c887d] hover:text-[#d2bd8b] transition cursor-pointer text-xs"
-            >
-              Splash View
-            </button>
           </div>
         </div>
       </header>
@@ -246,124 +270,126 @@ export default function App() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
         {/* Navigation Sidebar */}
         <nav className="w-full md:w-64 shrink-0 space-y-1">
-          <div className="text-[11px] font-semibold uppercase tracking-wider text-[#7d796e] px-3 mb-2">
-            Analytical Workflows
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-[#736f66] px-3 mb-2">
+            Main Navigation
           </div>
 
           <button
-            onClick={() => setActiveTab('dossier')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
-              activeTab === 'dossier'
-                ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
-                : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+            onClick={() => setActiveTab('overview')}
+            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+              activeTab === 'overview'
+                ? 'bg-[#181d28] text-[#f1e6c6] border border-[#7d6d4e] shadow-sm'
+                : 'text-[#a39e93] hover:bg-[#12151c] hover:text-[#eee9dc]'
             }`}
           >
-            <span>📁</span>
-            <span>Criminal Case Dossier</span>
+            <IconLayoutDashboard className="w-4 h-4 text-[#d2bd8b]" />
+            <span>Executive Overview</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('citations')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
-              activeTab === 'citations'
-                ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
-                : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
-            }`}
-          >
-            <span>📊</span>
-            <span>Citation Ranking</span>
-          </button>
+          <div className="pt-3 mt-3 border-t border-[#1a1e27]">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#736f66] px-3 mb-2">
+              Analytical Workflows
+            </div>
 
-          <button
-            onClick={() => setActiveTab('judicial-review')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
-              activeTab === 'judicial-review'
-                ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
-                : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
-            }`}
-          >
-            <span>🔍</span>
-            <span>Judicial Review Analysis</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('dossier')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'dossier'
+                  ? 'bg-[#181d28] text-[#f1e6c6] border border-[#7d6d4e] shadow-sm'
+                  : 'text-[#a39e93] hover:bg-[#12151c] hover:text-[#eee9dc]'
+              }`}
+            >
+              <IconFileText className="w-4 h-4 text-[#d2bd8b]" />
+              <span>Criminal Case Dossier</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('taxonomy')}
-            className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
-              activeTab === 'taxonomy'
-                ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
-                : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
-            }`}
-          >
-            <span>🏷️</span>
-            <span>Precedent Taxonomy</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('citations')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'citations'
+                  ? 'bg-[#181d28] text-[#f1e6c6] border border-[#7d6d4e] shadow-sm'
+                  : 'text-[#a39e93] hover:bg-[#12151c] hover:text-[#eee9dc]'
+              }`}
+            >
+              <IconAward className="w-4 h-4 text-[#d2bd8b]" />
+              <span>Citation Ranking</span>
+            </button>
 
-          {/* CRUD Management Workflows */}
-          <div className="pt-4 mt-4 border-t border-[#1e2229]">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-[#d2bd8b] px-3 mb-2 flex items-center justify-between">
-              <span>CRUD Interfaces</span>
-              <span className="text-[9px] bg-[#24211a] border border-[#7d6d4e] px-1.5 py-0.5 rounded text-[#f1e6c6]">
-                DA2
+            <button
+              onClick={() => setActiveTab('judicial-review')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'judicial-review'
+                  ? 'bg-[#181d28] text-[#f1e6c6] border border-[#7d6d4e] shadow-sm'
+                  : 'text-[#a39e93] hover:bg-[#12151c] hover:text-[#eee9dc]'
+              }`}
+            >
+              <IconScale className="w-4 h-4 text-[#d2bd8b]" />
+              <span>Judicial Review</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('taxonomy')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'taxonomy'
+                  ? 'bg-[#181d28] text-[#f1e6c6] border border-[#7d6d4e] shadow-sm'
+                  : 'text-[#a39e93] hover:bg-[#12151c] hover:text-[#eee9dc]'
+              }`}
+            >
+              <IconTag className="w-4 h-4 text-[#d2bd8b]" />
+              <span>Precedent Taxonomy</span>
+            </button>
+          </div>
+
+          {/* Registry Management (CRUD) */}
+          <div className="pt-3 mt-3 border-t border-[#1a1e27]">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#d2bd8b] px-3 mb-2 flex items-center justify-between">
+              <span>Case Registries</span>
+              <span className="text-[9px] bg-[#1d222e] border border-[#7d6d4e]/60 px-1.5 py-0.5 rounded text-[#f1e6c6]">
+                CRUD
               </span>
             </div>
 
             <button
-              onClick={() => setActiveTab('incidents')}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
-                activeTab === 'incidents'
-                  ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
-                  : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+              onClick={() => setActiveTab('charge-sheets')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'charge-sheets'
+                  ? 'bg-[#181d28] text-[#f1e6c6] border border-[#7d6d4e] shadow-sm'
+                  : 'text-[#a39e93] hover:bg-[#12151c] hover:text-[#eee9dc]'
               }`}
             >
-              <span>📍</span>
-              <span>Incident Management</span>
+              <IconBriefcase className="w-4 h-4 text-[#d2bd8b]" />
+              <span>Docket Charge Sheets</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('charge-sheets')}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
-                activeTab === 'charge-sheets'
-                  ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
-                  : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+              onClick={() => setActiveTab('incidents')}
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+                activeTab === 'incidents'
+                  ? 'bg-[#181d28] text-[#f1e6c6] border border-[#7d6d4e] shadow-sm'
+                  : 'text-[#a39e93] hover:bg-[#12151c] hover:text-[#eee9dc]'
               }`}
             >
-              <span>📜</span>
-              <span>Charge Sheet Management</span>
+              <IconMapPin className="w-4 h-4 text-[#d2bd8b]" />
+              <span>Incident Registry</span>
             </button>
 
             <button
               onClick={() => setActiveTab('citations-crud')}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
+              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-medium transition flex items-center gap-2.5 cursor-pointer ${
                 activeTab === 'citations-crud'
-                  ? 'bg-[#1e1c17] text-[#f1e6c6] border border-[#7d6d4e]'
-                  : 'text-[#a39e93] hover:bg-[#121519] hover:text-[#eee9dc]'
+                  ? 'bg-[#181d28] text-[#f1e6c6] border border-[#7d6d4e] shadow-sm'
+                  : 'text-[#a39e93] hover:bg-[#12151c] hover:text-[#eee9dc]'
               }`}
             >
-              <span>⚖️</span>
+              <IconScale className="w-4 h-4 text-[#d2bd8b]" />
               <span>Judgment Citations</span>
             </button>
-          </div>
-
-          {/* Database Infrastructure Notice */}
-          <div className="pt-5 border-t border-[#1e2229] mt-5 px-3 text-[11px] text-[#736f66] space-y-2">
-            <span className="font-semibold text-[#8c887d] block">Architecture Notes:</span>
-            <p className="leading-relaxed">
-              Target DB: <code className="text-[#a39e93]">DBMS_DA2_TEST</code>
-            </p>
-            <p className="leading-relaxed">
-              Engine: <code className="text-[#a39e93]">MySQL 8.0+</code>
-            </p>
-            <p className="leading-relaxed text-[10px]">
-              Full CRUD: <code className="text-[#a39e93]">INCIDENT</code>,{' '}
-              <code className="text-[#a39e93]">DOCKET_CHARGE_SHEET</code>,{' '}
-              <code className="text-[#a39e93]">JUDGMENT_CITATION</code>,{' '}
-              <code className="text-[#a39e93]">CASE_TAG_MAPPING</code>
-            </p>
           </div>
         </nav>
 
         {/* Main Workspace Area */}
-        <main className="flex-1 min-w-0 bg-[#0e1013] border border-[#1e2229] rounded-2xl p-6 shadow-sm">
+        <main className="flex-1 min-w-0 bg-[#0c0e13] border border-[#1d222e] rounded-2xl p-6 shadow-xl">
+          {activeTab === 'overview' && <DashboardOverview onNavigate={setActiveTab} />}
           {activeTab === 'dossier' && <CriminalDossierView />}
           {activeTab === 'citations' && <CitationRankingView />}
           {activeTab === 'judicial-review' && <JudicialReviewView />}
@@ -375,10 +401,9 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-[#1e2229] py-4 text-center text-[11px] text-[#66635b]">
-        Judicial Case Management and Precedent System • Member 3 Module (Tejas) • Vite + Express + MySQL 8.0
+      <footer className="border-t border-[#1a1e27] py-4 text-center text-[11px] text-[#6b675e]">
+        Judicial Case Management and Precedent System • High Court & Trial Bench Registry • Member 3 Module (Tejas)
       </footer>
     </div>
   );
 }
-

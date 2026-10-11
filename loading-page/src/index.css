@@ -16,6 +16,7 @@ button { font: inherit; }
 
 /* Timeline — 0–1.5s ambient darkness, 1.5–3.5s architecture, 3.5–5s scales,
    5–6s emblem finish, 6–7.5s title, 7.5–8.5s subtitle, 8.5–10s progress. */
+/* Refined Loading Sequence — calibrated for a swift, elegant 2.2s automatic reveal */
 .splash {
   position: fixed;
   inset: 0;
@@ -28,7 +29,12 @@ button { font: inherit; }
     #050608;
   color: #ebe6d8;
   opacity: 1;
-  transition: opacity .9s cubic-bezier(.55, 0, .2, 1), filter .9s ease;
+  transition: opacity .5s cubic-bezier(.55, 0, .2, 1), filter .5s ease;
+}
+
+.splash.fade-out {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .splash::after {
@@ -47,10 +53,10 @@ button { font: inherit; }
   width: min(66vw, 950px);
   height: min(62vw, 760px);
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(200,178,122,.082) 0, rgba(129,108,66,.032) 34%, transparent 69%);
+  background: radial-gradient(ellipse, rgba(200,178,122,.12) 0, rgba(129,108,66,.05) 34%, transparent 69%);
   opacity: 0;
   transform: scale(.72);
-  animation: ambientReveal 4.6s .25s cubic-bezier(.2,.7,.2,1) forwards;
+  animation: ambientReveal 1.6s .1s cubic-bezier(.2,.7,.2,1) forwards;
 }
 
 .architectural-grid {
@@ -58,20 +64,20 @@ button { font: inherit; }
   inset: 0;
   opacity: 0;
   background-image:
-    linear-gradient(rgba(218,203,168,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(218,203,168,.02) 1px, transparent 1px);
+    linear-gradient(rgba(218,203,168,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(218,203,168,.025) 1px, transparent 1px);
   background-size: 84px 84px;
   mask-image: radial-gradient(circle at 50% 48%, #000 0, transparent 68%);
-  animation: quietReveal 3s 3.2s ease forwards;
+  animation: quietReveal 1.2s .3s ease forwards;
 }
 
 .columns-bg {
   position: absolute;
   inset: 0;
   opacity: 0;
-  background: repeating-linear-gradient(90deg, transparent 0, transparent 10.5%, rgba(213,199,165,.022) 10.6%, rgba(213,199,165,.022) 13.4%, transparent 13.5%, transparent 20%);
+  background: repeating-linear-gradient(90deg, transparent 0, transparent 10.5%, rgba(213,199,165,.03) 10.6%, rgba(213,199,165,.03) 13.4%, transparent 13.5%, transparent 20%);
   mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent);
-  animation: quietReveal 4s 3.6s ease forwards;
+  animation: quietReveal 1.2s .4s ease forwards;
 }
 
 .case-connections {
@@ -79,26 +85,26 @@ button { font: inherit; }
   inset: 0;
   width: 100%;
   height: 100%;
-  color: rgba(191,178,146,.075);
+  color: rgba(191,178,146,.1);
   opacity: 0;
   stroke-width: .65;
   stroke-dasharray: 600;
   stroke-dashoffset: 600;
-  animation: recordsReveal 3.5s 4.2s ease-out forwards;
+  animation: recordsReveal 1.4s .5s ease-out forwards;
 }
 
 .document-ghost {
   position: absolute;
   width: 150px;
   height: 190px;
-  border: 1px solid rgba(217,203,169,.035);
+  border: 1px solid rgba(217,203,169,.045);
   opacity: 0;
   padding: 32px 22px;
-  animation: documentFlash 3.2s 4.4s ease both;
+  animation: documentFlash 1.6s .6s ease both;
 }
 .document-left { left: 9%; top: 32%; transform: rotate(-2deg); }
 .document-right { right: 8%; top: 24%; transform: rotate(2deg) scale(.82); }
-.document-ghost i { display: block; height: 1px; margin-bottom: 20px; background: rgba(217,203,169,.045); }
+.document-ghost i { display: block; height: 1px; margin-bottom: 20px; background: rgba(217,203,169,.06); }
 .document-ghost i:nth-child(1) { width: 42%; }
 .document-ghost i:nth-child(2) { width: 92%; }
 .document-ghost i:nth-child(3) { width: 73%; }
@@ -111,7 +117,7 @@ button { font: inherit; }
   height: 2px;
   border-radius: 50%;
   background: #c8b27a;
-  box-shadow: 0 0 6px rgba(200,178,122,.24);
+  box-shadow: 0 0 6px rgba(200,178,122,.3);
   opacity: 0;
   animation: particleDrift ease-in-out infinite;
 }
@@ -128,104 +134,104 @@ button { font: inherit; }
 
 .judicial-mark {
   position: relative;
-  width: min(55vw, 550px);
+  width: min(52vw, 500px);
   opacity: 0;
-  animation: markStage 1ms .65s forwards;
+  animation: markStage 1ms .1s forwards;
 }
 .judicial-mark svg { position: relative; display: block; width: 100%; overflow: visible; }
-.judicial-mark svg { animation: emblemFinish 1.1s 5s cubic-bezier(.22,.75,.2,1) both; }
+.judicial-mark svg { animation: emblemFinish .8s 1.2s cubic-bezier(.22,.75,.2,1) both; }
 .mark-aura {
   position: absolute;
   inset: 15% 8% 0;
-  background: radial-gradient(ellipse, rgba(204,177,112,.14), transparent 66%);
+  background: radial-gradient(ellipse, rgba(204,177,112,.18), transparent 66%);
   filter: blur(22px);
   opacity: 0;
-  animation: quietReveal 3.5s 3.3s ease forwards;
+  animation: quietReveal 1.2s .6s ease forwards;
 }
-.draw-lines { stroke-width: 1.05; filter: drop-shadow(0 0 2px rgba(200,178,122,.15)); }
+.draw-lines { stroke-width: 1.05; filter: drop-shadow(0 0 2px rgba(200,178,122,.2)); }
 .draw {
   stroke-dasharray: 900;
   stroke-dashoffset: 900;
-  animation: lineDraw 2.8s cubic-bezier(.62,0,.25,1) forwards;
+  animation: lineDraw 1.2s cubic-bezier(.62,0,.25,1) forwards;
 }
-.draw-3 { animation-delay: 1.5s; animation-duration: 1.55s; }
-.draw-4 { animation-delay: 1.75s; animation-duration: 1.6s; }
-.draw-5 { animation-delay: 1.9s; animation-duration: 1.55s; }
-.draw-6 { animation-delay: 2.05s; animation-duration: 1.45s; }
-.draw-7 { animation-delay: 2.2s; animation-duration: 1.3s; }
-.draw-1 { animation-delay: 2.5s; animation-duration: 1s; }
-.draw-2 { animation-delay: 2.72s; animation-duration: .78s; }
-.draw-8 { animation-delay: 3s; animation-duration: .5s; }
-.scale-draw-1 { animation-delay: 3.5s; animation-duration: 1.35s; }
-.scale-draw-2 { animation-delay: 3.65s; animation-duration: 1.25s; }
-.scale-draw-3 { animation-delay: 3.82s; animation-duration: 1.18s; }
-.scale-draw-4 { animation-delay: 4s; animation-duration: 1s; }
-.structure-fill { opacity: 0; animation: materialize 1.25s 4.85s ease-out forwards; }
-.scale-joint, .pediment-detail { opacity: 0; animation: simpleFade .8s 4.7s ease-out forwards; }
-.mark-sweep { opacity: 0; animation: simpleFade .1s 5.15s forwards; }
-.mark-sweep rect { animation: lightSweep 1.35s 5.18s cubic-bezier(.4,0,.2,1) forwards; }
+.draw-3 { animation-delay: .2s; animation-duration: .7s; }
+.draw-4 { animation-delay: .3s; animation-duration: .7s; }
+.draw-5 { animation-delay: .35s; animation-duration: .7s; }
+.draw-6 { animation-delay: .4s; animation-duration: .7s; }
+.draw-7 { animation-delay: .45s; animation-duration: .7s; }
+.draw-1 { animation-delay: .5s; animation-duration: .6s; }
+.draw-2 { animation-delay: .55s; animation-duration: .5s; }
+.draw-8 { animation-delay: .6s; animation-duration: .5s; }
+.scale-draw-1 { animation-delay: .7s; animation-duration: .6s; }
+.scale-draw-2 { animation-delay: .75s; animation-duration: .6s; }
+.scale-draw-3 { animation-delay: .8s; animation-duration: .6s; }
+.scale-draw-4 { animation-delay: .85s; animation-duration: .6s; }
+.structure-fill { opacity: 0; animation: materialize .7s .9s ease-out forwards; }
+.scale-joint, .pediment-detail { opacity: 0; animation: simpleFade .5s .9s ease-out forwards; }
+.mark-sweep { opacity: 0; animation: simpleFade .1s 1.1s forwards; }
+.mark-sweep rect { animation: lightSweep .9s 1.1s cubic-bezier(.4,0,.2,1) forwards; }
 
 .title-lockup {
   display: flex;
   width: 100%;
   flex-direction: column;
   align-items: center;
-  margin-top: -10px;
+  margin-top: -6px;
 }
 .title-rule {
   width: 0;
   height: 1px;
-  margin-bottom: 20px;
-  background: linear-gradient(90deg, transparent, rgba(198,174,118,.72), transparent);
-  animation: ruleGrow 1.2s 5.85s cubic-bezier(.2,.8,.2,1) forwards;
+  margin-bottom: 16px;
+  background: linear-gradient(90deg, transparent, rgba(198,174,118,.8), transparent);
+  animation: ruleGrow .8s 1.0s cubic-bezier(.2,.8,.2,1) forwards;
 }
 .title-lockup h1 {
   margin: 0;
   text-align: center;
   color: #eee9dc;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: clamp(25px, 3vw, 39px);
+  font-size: clamp(24px, 2.8vw, 36px);
   font-weight: 500;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: .085em;
   text-transform: uppercase;
 }
-.title-lockup h1 span { display: block; opacity: 0; filter: blur(7px); transform: translateY(12px); }
-.title-lockup h1 span:first-child { animation: titleReveal 1.1s 6s cubic-bezier(.2,.8,.2,1) forwards; }
+.title-lockup h1 span { display: block; opacity: 0; filter: blur(6px); transform: translateY(10px); }
+.title-lockup h1 span:first-child { animation: titleReveal .7s 1.1s cubic-bezier(.2,.8,.2,1) forwards; }
 .title-lockup h1 span:last-child {
-  margin-top: 5px;
+  margin-top: 4px;
   color: #c3aa72;
   font-size: .67em;
   font-weight: 600;
   letter-spacing: .145em;
-  animation: titleReveal 1.1s 6.7s cubic-bezier(.2,.8,.2,1) forwards;
+  animation: titleReveal .7s 1.25s cubic-bezier(.2,.8,.2,1) forwards;
 }
 .title-lockup > p {
-  margin: 20px 0 0;
-  color: rgba(218,211,193,.68);
-  font-size: clamp(8px, .82vw, 10px);
+  margin: 14px 0 0;
+  color: rgba(218,211,193,.7);
+  font-size: clamp(8px, .8vw, 10px);
   font-weight: 400;
   letter-spacing: .12em;
   opacity: 0;
   text-transform: uppercase;
-  transform: translateY(8px);
-  animation: titleReveal 1s 7.5s ease-out forwards;
+  transform: translateY(6px);
+  animation: titleReveal .6s 1.4s ease-out forwards;
 }
 .title-lockup > p b { padding: 0 .55em; color: #9d875b; font-size: .7em; }
 
-.loading-block { width: min(72vw, 390px); margin-top: 27px; opacity: 0; animation: simpleFade .65s 8.35s forwards; }
+.loading-block { width: min(72vw, 360px); margin-top: 20px; opacity: 0; animation: simpleFade .5s 1.3s forwards; }
 .loading-context {
   display: block;
   height: 15px;
-  color: rgba(205,198,180,.29);
-  font-size: 6px;
-  font-weight: 400;
-  letter-spacing: .11em;
+  color: rgba(205,198,180,.4);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .12em;
   text-align: center;
   text-transform: uppercase;
 }
-.loading-context b { padding: 0 .5em; color: rgba(200,178,122,.38); font-weight: 400; }
-.progress-track { height: 1px; overflow: hidden; background: rgba(211,195,157,.11); }
+.loading-context b { padding: 0 .5em; color: rgba(200,178,122,.5); font-weight: 500; }
+.progress-track { height: 2px; overflow: hidden; background: rgba(211,195,157,.15); border-radius: 9999px; }
 .progress-track span {
   display: block;
   width: 100%;
@@ -234,7 +240,7 @@ button { font: inherit; }
   box-shadow: 0 0 6px rgba(200,178,122,.35);
   transform: scaleX(0);
   transform-origin: left;
-  animation: loadProgress 1.5s 8.5s cubic-bezier(.4,0,.12,1) forwards;
+  animation: loadProgress .9s 1.4s cubic-bezier(.4,0,.12,1) forwards;
 }
 
 @keyframes ambientReveal { to { opacity: 1; transform: scale(1); } }
