@@ -35,6 +35,8 @@ A DBMS project for managing judicial cases, court proceedings, appeals, judgment
         ├── App.tsx         # Main UI console (Forms, Visualizations, Banners)
         ├── main.tsx        # Application root entrypoint
         └── index.css       # Styling & theme definitions
+   
+```
 
 
 
